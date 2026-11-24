@@ -32,7 +32,6 @@ Só precisa de Docker (com Compose v2). Os atalhos estão no `Makefile`:
 | `make up` | Sobe o app em modo desenvolvimento → http://localhost:5000 |
 | `make logs` | Acompanha a compilação e a recarga automática |
 | `make test` | Roda os testes do Flutter dentro do container |
-| `make test-reload` | Testes da recarga automática (o segundo roda no host com Node) |
 | `make prod` | Build de produção servido por nginx → http://localhost:8080 |
 | `make rebuild` | Recria a imagem/container de desenvolvimento |
 | `make down` | Desliga tudo |
@@ -84,6 +83,14 @@ salve novamente. O polling do navegador não é ativado no build de produção.
 Se o container já estava rodando com a configuração antiga, execute uma vez
 `make rebuild`. Depois basta salvar os arquivos. Não execute outro
 `flutter run` na mesma porta.
+
+Testes da recarga automática (o segundo comando roda no host e precisa de Node;
+no Codespace o Node já vem instalado):
+
+```sh
+docker compose exec -T dev python3 -B -m unittest discover -s scripts -p "test_*.py"
+node --test scripts/test_bootstrap.cjs
+```
 
 Os dados da lista ficam só em memória: reiniciar o app apaga tudo (é o que a Aula 10 pede).
 
