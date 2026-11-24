@@ -23,15 +23,52 @@ As telas não têm texto, nome de campo nem limite escritos no código. Tudo vem
 - `regras.dart`: limites da validação (tamanho mínimo do tema, faixa da duração).
 - `tema.dart`: cor-base, raios e espaçamentos (paletas clara e escura saem da cor-base).
 
-## Rodar (container)
+## Rodar
+
+Só precisa de Docker (com Compose v2). Os atalhos estão no `Makefile`:
+
+| Comando | O que faz |
+|---|---|
+| `make up` | Sobe o app em modo desenvolvimento → http://localhost:5000 |
+| `make logs` | Acompanha a compilação e a recarga automática |
+| `make test` | Roda os testes do Flutter dentro do container |
+| `make test-reload` | Testes da recarga automática (o segundo roda no host com Node) |
+| `make prod` | Build de produção servido por nginx → http://localhost:8080 |
+| `make rebuild` | Recria a imagem/container de desenvolvimento |
+| `make down` | Desliga tudo |
+
+Sem `make`, os comandos equivalentes são:
 
 ```
 docker compose up -d dev
 docker compose logs -f dev
+docker compose exec dev flutter test
+docker compose up --build web
+docker compose down
 ```
 
-Abra http://localhost:5000. Testes: `docker compose exec dev flutter test`.
-Produção (nginx): `docker compose up --build web` → http://localhost:8080.
+Na primeira execução, aguarde o download/build da imagem e a compilação do
+Flutter antes de abrir a porta 5000: `make up` volta antes de a página estar
+pronta (acompanhe com `make logs`).
+
+### Codespace
+
+O `.devcontainer/` cria um ambiente Ubuntu 24.04 com **Docker-in-Docker**,
+Compose v2, Node e `make`. Ao abrir o Codespace:
+
+```sh
+make up
+```
+
+e abra a porta **5000** pela aba **PORTS**. Se o Codespace já existia antes
+dessa configuração, execute **Codespaces: Rebuild Container** pela paleta de
+comandos. O erro `/var/run/docker.sock: no such file or directory` indica que
+o daemon do Docker não está disponível (falta o rebuild).
+
+A imagem base está fixada em `ubuntu-24.04`, compatível com o Moby usado pela
+feature do Docker. Não troque pela tag móvel `base:ubuntu`.
+
+### Recarga automática
 
 O container inicia o Flutter e observa `lib/`, `web/`, `assets/` e `pubspec`
 por polling, inclusive em volumes do Codespace/Windows. Salvar um arquivo
@@ -44,16 +81,27 @@ estado: o estado em memória é reiniciado; o SQLite continua persistido.
 Erros de compilação aparecem nos logs e não recarregam a página; corrija e
 salve novamente. O polling do navegador não é ativado no build de produção.
 
-Se o container já estava rodando com a configuração antiga, execute uma vez:
-`docker compose up -d --build --force-recreate dev`. Depois basta salvar os
-arquivos. Não execute outro `flutter run` na mesma porta. Na raiz do
-repositório, `make estudae` usa esse mesmo fluxo automático.
-
-Testes da recarga automática (o segundo comando roda no host com Node):
-
-```sh
-docker compose exec -T dev python3 -B -m unittest discover -s scripts -p 'test_*.py'
-node --test scripts/test_bootstrap.cjs
-```
+Se o container já estava rodando com a configuração antiga, execute uma vez
+`make rebuild`. Depois basta salvar os arquivos. Não execute outro
+`flutter run` na mesma porta.
 
 Os dados da lista ficam só em memória: reiniciar o app apaga tudo (é o que a Aula 10 pede).
+
+## Estrutura
+
+```
+lib/
+  main.dart          entrada do app
+  aulas/             uma tela/arquivo por aula (7 a 12)
+  config/            textos, campos, regras e tema (troca de domínio)
+  dados/             acesso ao SQLite (sqflite)
+  widgets/           componentes compartilhados
+test/                testes do Flutter
+web/                 index, bootstrap e arquivos do SQLite (wasm)
+scripts/             recarga automática do container de dev (+ testes)
+Dockerfile.dev       imagem de desenvolvimento (Flutter)
+Dockerfile           build de produção servido por nginx (nginx.conf)
+docker-compose.yml   serviços dev (5000) e web (8080)
+Makefile             atalhos (make help)
+.devcontainer/       ambiente do Codespace (Docker-in-Docker)
+```

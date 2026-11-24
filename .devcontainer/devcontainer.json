@@ -1,19 +1,27 @@
 {
-  "name": "estudae (Flutter web)",
-  "dockerComposeFile": ["../docker-compose.yml"],
-  "service": "dev",
-  "overrideCommand": false,
-  "runServices": ["dev"],
-  "workspaceFolder": "/workspaces/estudae",
-  "shutdownAction": "none",
-  "forwardPorts": [5000],
-  "portsAttributes": {
-    "5000": { "label": "Flutter web (dev)", "onAutoForward": "notify" }
+  "name": "Estudaê (Flutter web)",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "dockerDashComposeVersion": "v2"
+    },
+    "ghcr.io/devcontainers/features/node:1": {}
   },
-  "postCreateCommand": "git config --global --add safe.directory /workspaces/estudae && flutter pub get",
+  "forwardPorts": [5000, 8080],
+  "portsAttributes": {
+    "5000": { "label": "Estudaê - Flutter web (dev)", "onAutoForward": "openBrowser" },
+    "8080": { "label": "Estudaê - build de produção (nginx)", "onAutoForward": "notify" }
+  },
   "customizations": {
     "vscode": {
-      "extensions": ["Dart-Code.dart-code", "Dart-Code.flutter"]
+      "extensions": [
+        "Dart-Code.dart-code",
+        "Dart-Code.flutter",
+        "anthropic.claude-code"
+      ]
     }
-  }
+  },
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y make && (npm install -g @anthropic-ai/claude-code || true)",
+  "postAttachCommand": "echo 'Rode:  make up   (porta 5000). Veja tudo com: make help'"
 }
